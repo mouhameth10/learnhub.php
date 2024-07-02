@@ -74,7 +74,7 @@ try {
         }
         $reponse["status"] = true;
     }
-    if($params["tout"]){
+    if(!empty($params["tout"])){
         $query = "SHOW TABLES";
         $tables = $taf_config->get_db()->query($query)->fetchAll(PDO::FETCH_ASSOC);
         foreach ($tables as $key => $value) {

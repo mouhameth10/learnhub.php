@@ -15,9 +15,9 @@ class TafConfig
     public $database_type = "mysql"; // "mysql" | "pgsql" | "sqlsrv"
     public $host = "localhost"; // adresse ou ip du serveur
     public $port = "3306"; // 3306 pour mysql | 5432 pour pgsql | 1433 pour sqlsrv 
-    public $database_name = "ammo1331_test2_taf"; // nom de la base de données
-    public $user = "ammo1331_taf_test2"; // nom de l'utilisateur de la base de données
-    public $password = "X!^L{GisHKS3"; // mot de passe de l'utilisateur de la base de données
+    public $database_name = "c0db1"; // nom de la base de données
+    public $user = "root"; // nom de l'utilisateur de la base de données
+    public $password = "root"; // mot de passe de l'utilisateur de la base de données
 
     /* informations de connexion à la documentation */
     public $documentation_username = "admin"; // nom d'utilisateur pour accéder à la documentation
@@ -83,7 +83,7 @@ class TafConfig
             // réglage du fuseau Horaire
             date_default_timezone_set("UTC");
         }
-        return  static::$db_instance;
+        return static::$db_instance;
     }
 
     public function allow_cors()
@@ -127,7 +127,7 @@ class TafConfig
     }
     public function get_api_service()
     {
-    return "
+        return "
                 import { HttpClient, HttpHeaders } from '@angular/common/http';
                 import { Injectable } from '@angular/core';
                 import { Router } from '@angular/router';
@@ -292,50 +292,73 @@ class TafConfig
             "les_referenced_table" => [],
             "les_colonnes" => $this->get_db()->query("DESCRIBE $table_name")->fetchAll(PDO::FETCH_ASSOC)
         );
+
+        // Vérifiez que la description de la table a réussi.
+        if ($resultat["les_colonnes"] === false) {
+            echo "Erreur : Impossible de décrire la table $table_name";
+            return null;
+        }
+
         foreach ($resultat["les_colonnes"] as $key => $une_colonne) {
             $une_colonne["explications"] = "";
-            if ($une_colonne["Key"] == "PRI") { // il  s'agit d'un e cle primaire
+
+            if ($une_colonne["Key"] == "PRI") {
                 $une_colonne["explications"] = "clé primaire";
                 $resultat["cle_primaire"] = $une_colonne;
-            } else if ($une_colonne["Key"] == "MUL") { // il  s'agit d'un e cle etrangère
-                // informations sur la tables referante de cette colonne
-                //$based_table = $table;
+
+            } else if ($une_colonne["Key"] == "MUL") {
                 $la_cle_etrangere = $une_colonne["Field"];
-                $query2 = "SELECT TABLE_NAME,COLUMN_NAME,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME
-          FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-          WHERE CONSTRAINT_SCHEMA='" . $this->database_name . "' and REFERENCED_TABLE_NAME IS NOT NULL
-          and TABLE_NAME='" . $table_name . "' and COLUMN_NAME='$la_cle_etrangere'
-          order by REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME";
+
+                $query2 = "
+                    SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+                    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                    WHERE CONSTRAINT_SCHEMA='" . $this->database_name . "' 
+                    AND REFERENCED_TABLE_NAME IS NOT NULL
+                    AND TABLE_NAME='" . $table_name . "' 
+                    AND COLUMN_NAME='$la_cle_etrangere'
+                    ORDER BY REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME";
+
                 $une_colonne["table"] = $this->get_db()->query($query2)->fetch(PDO::FETCH_ASSOC);
-                $une_colonne["table_existant"] = false;
-                $une_colonne["explications"] = "clé étrangère liée à la colonne " . $une_colonne["table"]["REFERENCED_COLUMN_NAME"] . " de la table " . $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-                if (in_array($une_colonne["table"]["REFERENCED_TABLE_NAME"], $les_based_table_name)) { // on revient à la table de depart et on risque de'etre en boucle infinie
-                    $une_colonne["table_existant"] = true;
-                    if ($une_colonne["table"]["REFERENCED_TABLE_NAME"] == $table_name) {
-                        $une_colonne["referenced_table"] = array(
-                            "table_name" => $une_colonne["table"]["REFERENCED_TABLE_NAME"],
-                            "cle_primaire" => $resultat["cle_primaire"],
-                            "les_based_table_name" => $les_based_table_name,
-                            "les_referenced_table" => $resultat["les_referenced_table"],
-                            "les_colonnes" => $this->get_db()->query("DESCRIBE $table_name")->fetchAll(PDO::FETCH_ASSOC)
-                        );
+
+                // Vérifiez que la requête de la clé étrangère a réussi.
+                if ($une_colonne["table"] !== false) {
+                    $une_colonne["table_existant"] = false;
+                    $une_colonne["explications"] = "clé étrangère liée à la colonne "
+                        . $une_colonne["table"]["REFERENCED_COLUMN_NAME"]
+                        . " de la table "
+                        . $une_colonne["table"]["REFERENCED_TABLE_NAME"];
+
+                    if (in_array($une_colonne["table"]["REFERENCED_TABLE_NAME"], $les_based_table_name)) {
+                        $une_colonne["table_existant"] = true;
+
+                        if ($une_colonne["table"]["REFERENCED_TABLE_NAME"] == $table_name) {
+                            $une_colonne["referenced_table"] = array(
+                                "table_name" => $une_colonne["table"]["REFERENCED_TABLE_NAME"],
+                                "cle_primaire" => $resultat["cle_primaire"],
+                                "les_based_table_name" => $les_based_table_name,
+                                "les_referenced_table" => $resultat["les_referenced_table"],
+                                "les_colonnes" => $this->get_db()->query("DESCRIBE $table_name")->fetchAll(PDO::FETCH_ASSOC)
+                            );
+                            $resultat['les_referenced_table'][] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
+                        }
+
+                    } else if ($une_colonne["table"]) {
                         $resultat['les_referenced_table'][] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
+                        $les_based_table_name[] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
+                        $une_colonne["referenced_table"] = $this->get_table_descriptions($une_colonne["table"]["REFERENCED_TABLE_NAME"], $les_based_table_name);
                     }
-                } else if ($une_colonne["table"]) {
-                    $resultat['les_referenced_table'][] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-                    $les_based_table_name[] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-                    $une_colonne["referenced_table"] = $this->get_table_descriptions($une_colonne["table"]["REFERENCED_TABLE_NAME"], $les_based_table_name);
+
                 } else {
-                    # code...
+                    // echo "Erreur : Impossible de trouver les détails pour la clé étrangère " . $la_cle_etrangere;
                 }
-            } else {
-                # code...
             }
 
             $resultat["les_colonnes"][$key] = $une_colonne;
         }
+
         $resultat["les_based_table_name"] = $les_based_table_name;
 
         return $resultat;
     }
+
 }
