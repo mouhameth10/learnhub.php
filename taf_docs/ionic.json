@@ -1,0 +1,14 @@
+[
+    {
+        "action": "add",
+        "les_langages": [
+            {
+                "name": "HTML",
+                "disabled": false,
+                "code": {
+                    "input": "\n<!-- ${une_colonne.Field} field avec un contrôle de validité -->\n<div class=\"form-group col-sm-6\">\n  <label>{{ une_colonne.Field }}</label>\n  <input \n    class=\"form-control\" \n    type=\"text\"  \n    formControlName=\"{{ une_colonne.Field }}\"  \n    placeholder=\"{{ une_colonne.Field }}\"\n    [ngClass]=\"{ 'is-invalid': submitted && f[une_colonne.Field].errors }\"\n  />\n  <div *ngIf=\"submitted && f[une_colonne.Field].errors\" class=\"invalid-feedback\">\n      <div *ngIf=\"f[une_colonne.Field].errors.required\">{{ une_colonne.Field }} est obligatoire</div>\n  </div>\n</div>\n"
+                }
+            }
+        ]
+    }
+]

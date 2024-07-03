@@ -80,6 +80,16 @@ try {
                     return ["table" => $une_table, "description" => $docs->description, "table_descriptions" => $docs->table_descriptions, "les_types" => ["add", "edit", "list", "details"]];
                 }, $taf_config->tables);
     $reponse["base_url"] = $taf_config->get_base_url();
+    $files = scandir('../taf_docs');
+    $reponse["docs"]=array();
+    foreach ($files as $file) {
+        if (pathinfo($file, PATHINFO_EXTENSION) === 'json') {// ;jsnon
+            $reponse["docs"][] = array(
+                "langage" => $file,
+                "contenu" => json_decode(file_get_contents("../taf_docs/{$file}"),true)
+            );
+        }
+    }
     $reponse["status"] = true;
     echo json_encode($reponse);
 } catch (\Throwable $th) {

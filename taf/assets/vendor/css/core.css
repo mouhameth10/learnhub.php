@@ -9998,7 +9998,7 @@ button.list-group-item-gray.active {
   color: rgba(var(--bs-warning-rgb), var(--bs-text-opacity)) !important;
 }
 
-.text-danger {
+.base-color-our {
   --bs-text-opacity: 1;
   color: rgba(var(--bs-danger-rgb), var(--bs-text-opacity)) !important;
 }
