@@ -18,6 +18,7 @@ try {
     }
 
     /*{{content}}*/
+    $reponse["data"]=[];
     foreach ($params["les_tables"] as $value) {
         $reponse["data"][$value] = $taf_config->get_db()->query("select *from $value ")->fetchAll(PDO::FETCH_ASSOC);
     }

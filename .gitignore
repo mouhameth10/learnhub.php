@@ -1,5 +1,15 @@
-<<<<<<< HEAD
-TafConfig.php
-=======
-.DS_Store
->>>>>>> 2dd679cf4a46ce444d313c7ecc9e39439cbc2cc8
+*
+!/api/
+!/taf/
+!/taf_admin/
+!/taf_assets/
+!/taf_auth/
+!/taf_docs/
+!/taf_docs/
+!/.htaccess
+!/generate.php
+!/login.php
+!/readme.md
+!/TableDocumentation.php
+!/TableQuery.php
+!/TafConfig.php

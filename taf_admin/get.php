@@ -23,7 +23,7 @@ try {
 
     $condition = $table_query->dynamicCondition($params["condition"], "=");
     // $reponse["condition"]=$condition;
-    $query = "select *from $table_name " . $condition;
+    $query = "select * from $table_name $condition order by id_$table_name desc";
     $reponse["query"] = $query;
     $reponse["data"] = $taf_config->get_db()->query($query)->fetchAll(PDO::FETCH_ASSOC);
     $reponse["status"] = true;
