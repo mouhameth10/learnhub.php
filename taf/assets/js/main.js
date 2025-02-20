@@ -10,6 +10,8 @@ function test() {
 }
 
 function initialize() {
+  console.log('initialize');
+  
   // Initialize menu
   //-----------------
 
