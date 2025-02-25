@@ -123,8 +123,10 @@ class TafConfig
 
         // Append the requested resource location to the URL   
         $url .= dirname($_SERVER['REQUEST_URI']) . "/";
-
-        return $url;
+        // Vérifier et supprimer "/taf_admin/" à la fin si présent
+        $url = rtrim($url, "/") . "/";
+        $url = preg_replace('#/taf_admin/$#', '', $url); 
+        return $url. "/";
     }
     public function get_api_service()
     {
