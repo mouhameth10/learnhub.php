@@ -88,11 +88,32 @@ class TafConfig
 
     public function allow_cors()
     {
-        header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Headers: *");
-        header('Access-Control-Allow-Credentials: true');
-        header("Access-Control-Allow-Methods: *");
+        // header("Access-Control-Allow-Headers: *");
         header('Content-Type: application/json');
+
+        // Autoriser les requêtes provenant d'une origine spécifique
+        header("Access-Control-Allow-Origin: *");
+
+        // Autoriser les en-têtes spécifiques
+        header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+        // Autoriser l'utilisation des cookies ou des sessions entre les domaines
+        header('Access-Control-Allow-Credentials: true');
+
+        // Autoriser les méthodes HTTP spécifiques
+        header("Access-Control-Allow-Methods: *");
+
+        // Politique de sécurité pour le contenu
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';");
+
+        // Protection contre le clickjacking
+        header("X-Frame-Options: DENY");
+
+        // Activer HSTS pour forcer HTTPS
+        header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+
+        // Empêcher le sniffing MIME
+        header("X-Content-Type-Options: nosniff");
     }
     public function verify_documentation_auth($username, $password)
     {
