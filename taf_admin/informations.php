@@ -44,7 +44,7 @@ try {
                 "module" => "home",
                 "les_tables" => array_map(function ($une_table) {
                     $docs = new TableDocumentation($une_table);
-                    return ["table" => $une_table, "description" => $docs->description, "les_types" => ["add", "edit", "list", "details"]];
+                    return ["table" => $une_table, "description" => $docs->description, "les_types" => ["add", "edit", "list", "details","type"]];
                 }, $taf_config->tables)
             ],
             [
@@ -65,7 +65,7 @@ try {
                 "module" => "home",
                 "les_tables" => array_map(function ($une_table) {
                     $docs = new TableDocumentation($une_table);
-                    return ["table" => $une_table, "description" => $docs->description, "table_descriptions" => $docs->table_descriptions, "les_types" => ["add", "edit", "list", "details"]];
+                    return ["table" => $une_table, "description" => $docs->description, "table_descriptions" => $docs->table_descriptions, "les_types" => ["add", "edit", "list", "details","type"]];
                 }, $taf_config->tables)
             ],
             [
@@ -78,7 +78,7 @@ try {
     ];
     $reponse["tables"] = array_map(function ($une_table) {
         $docs = new TableDocumentation($une_table);
-        return ["table" => $une_table, "description" => $docs->description, "table_descriptions" => $docs->table_descriptions, "les_types" => ["add", "edit", "list", "details"]];
+        return ["table" => $une_table, "description" => $docs->description, "table_descriptions" => $docs->table_descriptions, "les_types" => ["add", "edit", "list", "details","type"]];
     }, $taf_config->tables);
     $reponse["base_url"] = $taf_config->get_base_url();
     $files = scandir('../taf_docs');
