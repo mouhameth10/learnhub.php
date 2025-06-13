@@ -23,6 +23,7 @@ class TableDocumentation extends TafConfig
         switch ($this->database_type) {
             case 'pgsql':
                 $this->description = $this->get_db()->query("select column_name from information_schema.columns where table_name = '{$this->table_name}'")->fetchAll(PDO::FETCH_COLUMN);
+                $this->table_descriptions = $this->get_table_descriptions($this->table_name, [$this->table_name]);
                 break;
             case 'mysql':
                 $this->description = $this->get_db()->query("desc {$this->table_name}")->fetchAll(PDO::FETCH_COLUMN);
@@ -126,10 +127,10 @@ class TableDocumentation extends TafConfig
                     $keysValues[] = '
                     &lt;!-- champs ' . $une_colonne["Field"] . ' avec un control de validite : ' . $une_colonne["explications"] . ' --&gt;
                     &lt;div class="form-group col-sm-6"&gt;
-                        &lt;label &gt;' . $une_colonne["referenced_table"]["table_name"] . '&lt;/label&gt;
+                        &lt;label &gt;' . $une_colonne["REFERENCED_TABLE_NAME"] . '&lt;/label&gt;
                         &lt;select [ngClass]="{ \'is-invalid\': submitted && f.' . $une_colonne["Field"] . '.errors }" class="form-select" formControlName="' . $une_colonne["Field"] . '"&gt;
-                            &lt;option value=""&gt;Sélectionnez un(e) ' . $une_colonne["referenced_table"]["table_name"] . '&lt;/option&gt;
-                            &lt;option [value]="one_' . $une_colonne["referenced_table"]["table_name"] . '.' . $une_colonne["referenced_table"]["cle_primaire"]["Field"] . '" *ngFor="let one_' . $une_colonne["referenced_table"]["table_name"] . ' of form_details.les_' . $une_colonne["referenced_table"]["table_name"] . 's"&gt;{{"' . $une_colonne["referenced_table"]["table_name"] . ' N°"+one_' . $une_colonne["referenced_table"]["table_name"] . '.' . $une_colonne["referenced_table"]["cle_primaire"]["Field"] . '}}&lt;/option&gt;
+                            &lt;option value=""&gt;Sélectionnez un(e) ' . $une_colonne["REFERENCED_TABLE_NAME"] . '&lt;/option&gt;
+                            &lt;option [value]="one_' . $une_colonne["REFERENCED_TABLE_NAME"] . '.' . $une_colonne["REFERENCED_COLUMN_NAME"] . '" *ngFor="let one_' . $une_colonne["REFERENCED_TABLE_NAME"] . ' of form_details.les_' . $une_colonne["REFERENCED_TABLE_NAME"] . 's"&gt;{{"' . $une_colonne["REFERENCED_TABLE_NAME"] . ' N°"+one_' . $une_colonne["REFERENCED_TABLE_NAME"] . '.' . $une_colonne["REFERENCED_COLUMN_NAME"] . '}}&lt;/option&gt;
                         &lt;/select&gt;
                         &lt;div *ngIf="submitted && f.' . $une_colonne["Field"] . '.errors" class="invalid-feedback"&gt;
                             &lt;div *ngIf="f.' . $une_colonne["Field"] . '.errors.required"&gt;ce champ est obligatoire&lt;/div&gt;
@@ -359,10 +360,10 @@ class TableDocumentation extends TafConfig
                     $keysValues[] = '
                     &lt;!-- champs ' . $une_colonne["Field"] . ' avec un control de validite : ' . $une_colonne["explications"] . ' --&gt;
                     &lt;div class="form-group col-sm-6"&gt;
-                        &lt;label &gt;' . $une_colonne["referenced_table"]["table_name"] . '&lt;/label&gt;
+                        &lt;label &gt;' . $une_colonne["REFERENCED_TABLE_NAME"] . '&lt;/label&gt;
                         &lt;select [ngClass]="{ \'is-invalid\': submitted && f.' . $une_colonne["Field"] . '.errors }" class="form-select" formControlName="' . $une_colonne["Field"] . '"&gt;
-                            &lt;option value=""&gt;Sélectionnez un(e) ' . $une_colonne["referenced_table"]["table_name"] . '&lt;/option&gt;
-                            &lt;option [value]="one_' . $une_colonne["referenced_table"]["table_name"] . '.' . $une_colonne["referenced_table"]["cle_primaire"]["Field"] . '" *ngFor="let one_' . $une_colonne["referenced_table"]["table_name"] . ' of form_details.les_' . $une_colonne["referenced_table"]["table_name"] . 's"&gt;{{"' . $une_colonne["referenced_table"]["table_name"] . ' N°"+one_' . $une_colonne["referenced_table"]["table_name"] . '.' . $une_colonne["referenced_table"]["cle_primaire"]["Field"] . '}}&lt;/option&gt;
+                            &lt;option value=""&gt;Sélectionnez un(e) ' . $une_colonne["REFERENCED_TABLE_NAME"] . '&lt;/option&gt;
+                            &lt;option [value]="one_' . $une_colonne["REFERENCED_TABLE_NAME"] . '.' . $une_colonne["REFERENCED_COLUMN_NAME"] . '" *ngFor="let one_' . $une_colonne["REFERENCED_TABLE_NAME"] . ' of form_details.les_' . $une_colonne["REFERENCED_TABLE_NAME"] . 's"&gt;{{"' . $une_colonne["REFERENCED_TABLE_NAME"] . ' N°"+one_' . $une_colonne["REFERENCED_TABLE_NAME"] . '.' . $une_colonne["REFERENCED_COLUMN_NAME"] . '}}&lt;/option&gt;
                         &lt;/select&gt;
                         &lt;div *ngIf="submitted && f.' . $une_colonne["Field"] . '.errors" class="invalid-feedback"&gt;
                             &lt;div *ngIf="f.' . $une_colonne["Field"] . '.errors.required"&gt;ce champ est obligatoire&lt;/div&gt;

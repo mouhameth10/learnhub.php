@@ -18,12 +18,13 @@ try {
         echo json_encode($auth_reponse);
         die;
     }
-    $table_name = $params["table_name"];
-    $table_query = new TableQuery($table_name);
+    $table = $params["table"];
+
+    $table_query = new TableQuery($table["table"]);
 
     $condition = $table_query->dynamicCondition($params["condition"], "=");
     // $reponse["condition"]=$condition;
-    $query = "select * from $table_name $condition order by id_$table_name desc";
+    $query = "select * from " . $table["table"] . " $condition order by " . $table["table_descriptions"]["cle_primaire"]["Field"] . " desc";
     $reponse["query"] = $query;
     $reponse["data"] = $taf_config->get_db()->query($query)->fetchAll(PDO::FETCH_ASSOC);
     $reponse["status"] = true;

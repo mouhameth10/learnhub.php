@@ -27,17 +27,17 @@ try {
         echo json_encode($reponse);
         exit;
     }
-    // pour charger l'heure courante
-    // $params["date_enregistrement"]=date("Y-m-d H:i:s");
-    $query = $table_query->dynamicInsert($params);
-    // $reponse["query"]=$query;
-    if ($taf_config->get_db()->exec($query)) {
+    
+    list($query, $stmt) = $table_query->dynamicInsert($params, $taf_config->get_db());
+    //$reponse["query"] = $query;
+
+    if ($stmt->execute()) {
         $reponse["status"] = true;
         $params["id_$table_name"] = $taf_config->get_db()->lastInsertId();
         $reponse["data"] = $params;
     } else {
         $reponse["status"] = false;
-        $reponse["erreur"] = "Erreur d'insertion à la base de ";
+        $reponse["erreur"] = $stmt->errorInfo();
     }
     echo json_encode($reponse);
 } catch (\Throwable $th) {

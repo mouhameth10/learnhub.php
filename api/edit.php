@@ -25,10 +25,16 @@ try {
         echo json_encode($reponse);
         exit;
     }
+    if(empty($params["condition"])){
+        $reponse["status"] = false;
+        $reponse["erreur"] = "Vous devez spécifier une condition pour la modification";
+        echo json_encode($reponse);
+        exit;
+    }
     // condition sur la modification
-    $condition=$table_query->dynamicCondition(json_decode($params["condition"]),'=');
+    $condition=$table_query->dynamicCondition($params["condition"],'=');
     // execution de la requete de modification
-    $query=$table_query->dynamicUpdate(json_decode($params["data"]),$condition);
+    $query=$table_query->dynamicUpdate($params["data"],$condition);
     //$reponse["query"]=$query;
     $resultat=$taf_config->get_db()->exec($query);
     if ($resultat) {

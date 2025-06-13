@@ -1,11 +1,11 @@
 <?php
 
 use Taf\TafConfig;
-if (file_get_contents('php://input')=="") {
-    $params=[];
+if (file_get_contents('php://input') == "") {
+    $params = [];
 } else {
-    $params=json_decode(file_get_contents('php://input'),true);
-}  
+    $params = json_decode(file_get_contents('php://input'), true);
+}
 try {
     require './TafConfig.php';
     $taf_config = new TafConfig();
@@ -42,10 +42,10 @@ try {
         }
 
         // mise à jour du contenu  du fichier de configuration suivi de la réation du fichier
-        $table_descriptions = $taf_config->get_table_descriptions($table_name, [$table_name]);
-        $referenced_tables_queries = implode("\n", array_map(function ($une_table) {
-            return '$reponse["data"]["les_' . $une_table . 's"] = $taf_config->get_db()->query("select * from ' . $une_table . '")->fetchAll(PDO::FETCH_ASSOC);';
-        }, $table_descriptions["les_referenced_table"]));
+        $table_descriptions = $taf_config->get_table_descriptions($table_name);
+        $referenced_tables_queries = implode("\n", array_map(function ($une_colonne) {
+            return '$reponse["data"]["les_' . $une_colonne["REFERENCED_TABLE_NAME"] . 's"] = $taf_config->get_db()->query("select * from ' . $une_colonne["REFERENCED_TABLE_NAME"] . '")->fetchAll(PDO::FETCH_ASSOC);';
+        }, array_filter($table_descriptions["les_colonnes"], fn($row) => $row['Key'] === 'MUL')));
         $config_content = str_replace("/*{{content}}*/", $referenced_tables_queries, file_get_contents("./api/get_form_details.php"));
 
         if (!file_exists('./' . $table_name . "/get_form_details.php")) {
@@ -74,7 +74,7 @@ try {
         }
         $reponse["status"] = true;
     }
-    if(!empty($params["tout"])){
+    if (!empty($params["tout"])) {
         $query = "SHOW TABLES";
         $tables = $taf_config->get_db()->query($query)->fetchAll(PDO::FETCH_ASSOC);
         foreach ($tables as $key => $value) {
@@ -84,7 +84,7 @@ try {
         $reponse["status"] = true;
         $reponse["data"]["all_tables"] = true;
         echo json_encode($reponse);
-    } elseif($params["table"]) {
+    } elseif ($params["table"]) {
         $table_name = $params["table"];
         generate($table_name);
         $reponse["status"] = true;

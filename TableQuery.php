@@ -21,34 +21,28 @@ class TableQuery
         }
         return "where " . implode(" and ", $keyOperateurValue);
     }
-    function dynamicInsert($assoc_array)
+    function dynamicInsert($assoc_array, $pdo)
     {
-        $keys = array();
-        $values = array();
-        foreach ($assoc_array as $key => $value) {
-            $keys[] = addslashes(htmlspecialchars($key));
-            if ($value == '') {
-                $values[] = 'null';
-            } else {
-                $values[] = "'" . addslashes(htmlspecialchars($value)) . "'";
-            }
+        $keys = [];
+        $placeholders = [];
+        $values = [];
+
+         foreach ($assoc_array as $key => $value) {
+            $keys[] = "$key"; // gérer les champs avec majuscules ou noms spéciaux
+            $placeholders[] = ":val$key";
+            $values[":val$key"] = $value !== '' ? $value : null;
         }
-        return "INSERT INTO $this->table_name(" . implode(",", $keys) . ") VALUES(" . implode(",", $values) . ")";
-    }
-    function dynamicInsert2($array)
-    {
-        $keys = array();
-        $values = array();
-        foreach ($array as $value) {
-            $keys[] = addslashes(htmlspecialchars($value["field"]));
-            if ($value == '') {
-                $values[] = 'null';
-            } else {
-                $values[] = "'" . addslashes(htmlspecialchars($value["valeur"])) . "'";
-            }
+
+        $sql = "INSERT INTO $this->table_name (" . implode(", ", $keys) . ") VALUES (" . implode(", ", $placeholders) . ")";
+
+        $stmt = $pdo->prepare($sql);
+        foreach ($values as $placeholder => $value) {
+            $stmt->bindValue($placeholder, $value);
         }
-        return "INSERT INTO $this->table_name(" . implode(",", $keys) . ") VALUES(" . implode(",", $values) . ")";
+
+        return [$sql, $stmt];
     }
+
 
     function dynamicUpdate($assoc_array, $condition)
     {

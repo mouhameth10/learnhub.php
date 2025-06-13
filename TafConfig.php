@@ -12,12 +12,12 @@ class TafConfig
     public $tables = [];
     public static $user_disconnected = false;
     /* Information de connexion à la base de données */
-    public $database_type = "mysql"; // "mysql" | "pgsql" | "sqlsrv"
+    public $database_type = "pgsql"; // "mysql" | "pgsql" | "sqlsrv"
     public $host = "localhost"; // adresse ou ip du serveur
-    public $port = "3306"; // 3306 pour mysql | 5432 pour pgsql | 1433 pour sqlsrv 
+    public $port = "5432"; // 3306 pour mysql | 5432 pour pgsql | 1433 pour sqlsrv
     public $database_name = "nom_de_la_base_de_données"; // nom de la base de données
-    public $user = "root"; // nom de l'utilisateur de la base de données
-    public $password = "root"; // mot de passe de l'utilisateur de la base de données
+    public $user = "postgres"; // nom de l'utilisateur de la base de données
+    public $password = ""; // mot de passe de l'utilisateur de la base de données
 
     /* informations de connexion à la documentation */
     public $documentation_username = "admin"; // nom d'utilisateur pour accéder à la documentation
@@ -146,13 +146,12 @@ class TafConfig
         $url .= dirname($_SERVER['REQUEST_URI']) . "/";
         // Vérifier et supprimer "/taf_admin/" à la fin si présent
         $url = rtrim($url, "/") . "/";
-        $url = preg_replace('#/taf_admin/$#', '', $url); 
-        return $url. "/";
+        $url = preg_replace('#/taf_admin/$#', '', $url);
+        return $url . "/";
     }
     public function get_api_service()
     {
-        return "
-                import { HttpClient, HttpHeaders } from '@angular/common/http';
+        return "import { HttpClient, HttpHeaders } from '@angular/common/http';
                 import { Injectable } from '@angular/core';
                 import { Router } from '@angular/router';
                 import { JwtHelperService } from '@auth0/angular-jwt';
@@ -307,21 +306,80 @@ class TafConfig
                 }
                 }";
     }
-    public function get_table_descriptions($table_name, $les_based_table_name)
+    public function get_colonnes($table_name)
+    {
+        $query = "";
+        switch ($this->database_type) {
+            case 'pgsql':
+                $query = "SELECT c.column_name AS Field,c.data_type AS Type,c.is_nullable AS Null,c.column_default AS Default,'' AS Extra,tc.constraint_type AS Key,
+                            ccu.table_name AS referenced_table_name, ccu.column_name AS referenced_column_name
+                        FROM (select * from information_schema.columns WHERE table_name = '$table_name' and table_schema='public') c
+                        LEFT JOIN information_schema.key_column_usage kcu on kcu.table_schema=c.table_schema and kcu.table_name=c.table_name and kcu.column_name=c.column_name
+                        LEFT join information_schema.table_constraints AS tc ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+                        LEFT JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema";
+                break;
+            case 'mysql':
+                $query = "SELECT c.column_name Field,c.data_type as Type,c.is_nullable,c.column_default as 'Default',''  Extra, tc.constraint_type as 'Key', 
+                            kcu.REFERENCED_TABLE_NAME, kcu.REFERENCED_COLUMN_NAME
+                        FROM (select * from INFORMATION_SCHEMA.columns WHERE table_name = '$table_name' and TABLE_SCHEMA = '" . $this->database_name . "') c
+                        left join INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu on kcu.table_schema=c.table_schema and kcu.table_name=c.table_name and kcu.column_name=c.column_name
+                        LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc ON kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME AND kcu.TABLE_NAME = tc.TABLE_NAME AND kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA";
+                break;
+            case 'value':
+                # code...
+                break;
+
+            default:
+                # code...
+                break;
+        }
+        $les_colonnes = $this->get_db()->query($query)->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($this->database_type == 'mysql') {
+            // Pour MySQL, on ajoute une colonne "Key" pour les clés primaires et étrangères
+            foreach ($les_colonnes as &$colonne) {
+                if (isset($colonne["Key"]) && $colonne["Key"] == "PRIMARY KEY") {
+                    $colonne["Key"] = "PRI"; // Clé primaire
+                }elseif (isset($colonne["Key"]) && $colonne["Key"] == "FOREIGN KEY") {
+                    $colonne["Key"] = "MUL"; // Clé étrangère
+                }
+            }
+        }
+        // conformer les valeurs des colonnes pgsql à mysql (mettre la cle key en PRI avec pgsql)
+        if ($this->database_type == 'pgsql') {
+            foreach ($les_colonnes as &$colonne) {
+                foreach ($colonne as $cle => $valeur) {
+                    $nouvelle_cle = ucfirst($cle);
+                    $colonne[$nouvelle_cle] = $valeur;
+                    unset($colonne[$cle]); // Supprimer l'ancienne clé
+                }
+                // la chaine de caractere $colonne["Default"] inclu la valeur nextval pour les clés primaires
+                if (isset($colonne["Default"]) && strpos($colonne["Default"], "nextval") !== false) {
+                    $colonne["Key"] = "PRI";
+                } else if (isset($colonne["Key"]) && $colonne["Key"] == "FOREIGN KEY") {
+                    $colonne["REFERENCED_COLUMN_NAME"] = $colonne["Referenced_column_name"] ?? "";
+                    $colonne["REFERENCED_TABLE_NAME"] = $colonne["Referenced_table_name"] ?? "";
+                    $colonne["Key"] = "MUL";
+                } else {
+                    $colonne["Key"] = "";
+                }
+            }
+        }
+        return $les_colonnes;
+    }
+    /**
+     * Récupère la description d'une table et de ses colonnes, ainsi que les clés primaires et étrangères.
+     *
+     * @param string $table_name Nom de la table à décrire.
+     * @return array|null Retourne un tableau contenant les détails de la table ou null en cas d'erreur.
+     */
+    public function get_table_descriptions($table_name)
     {
         $resultat = array(
             "table_name" => $table_name,
             "cle_primaire" => "",
-            "les_based_table_name" => $les_based_table_name,
-            "les_referenced_table" => [],
-            "les_colonnes" => $this->get_db()->query("DESCRIBE $table_name")->fetchAll(PDO::FETCH_ASSOC)
+            "les_colonnes" => $this->get_colonnes($table_name) // Récupère les colonnes de la table
         );
-
-        // Vérifiez que la description de la table a réussi.
-        if ($resultat["les_colonnes"] === false) {
-            echo "Erreur : Impossible de décrire la table $table_name";
-            return null;
-        }
 
         foreach ($resultat["les_colonnes"] as $key => $une_colonne) {
             $une_colonne["explications"] = "";
@@ -331,57 +389,14 @@ class TafConfig
                 $resultat["cle_primaire"] = $une_colonne;
 
             } else if ($une_colonne["Key"] == "MUL") {
-                $la_cle_etrangere = $une_colonne["Field"];
-
-                $query2 = "
-                    SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-                    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-                    WHERE CONSTRAINT_SCHEMA='" . $this->database_name . "' 
-                    AND REFERENCED_TABLE_NAME IS NOT NULL
-                    AND TABLE_NAME='" . $table_name . "' 
-                    AND COLUMN_NAME='$la_cle_etrangere'
-                    ORDER BY REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME";
-
-                $une_colonne["table"] = $this->get_db()->query($query2)->fetch(PDO::FETCH_ASSOC);
-
-                // Vérifiez que la requête de la clé étrangère a réussi.
-                if ($une_colonne["table"] !== false) {
-                    $une_colonne["table_existant"] = false;
-                    $une_colonne["explications"] = "clé étrangère liée à la colonne "
-                        . $une_colonne["table"]["REFERENCED_COLUMN_NAME"]
-                        . " de la table "
-                        . $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-
-                    if (in_array($une_colonne["table"]["REFERENCED_TABLE_NAME"], $les_based_table_name)) {
-                        $une_colonne["table_existant"] = true;
-
-                        if ($une_colonne["table"]["REFERENCED_TABLE_NAME"] == $table_name) {
-                            $une_colonne["referenced_table"] = array(
-                                "table_name" => $une_colonne["table"]["REFERENCED_TABLE_NAME"],
-                                "cle_primaire" => $resultat["cle_primaire"],
-                                "les_based_table_name" => $les_based_table_name,
-                                "les_referenced_table" => $resultat["les_referenced_table"],
-                                "les_colonnes" => $this->get_db()->query("DESCRIBE $table_name")->fetchAll(PDO::FETCH_ASSOC)
-                            );
-                            $resultat['les_referenced_table'][] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-                        }
-
-                    } else if ($une_colonne["table"]) {
-                        $resultat['les_referenced_table'][] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-                        $les_based_table_name[] = $une_colonne["table"]["REFERENCED_TABLE_NAME"];
-                        $une_colonne["referenced_table"] = $this->get_table_descriptions($une_colonne["table"]["REFERENCED_TABLE_NAME"], $les_based_table_name);
-                    }
-
-                } else {
-                    // echo "Erreur : Impossible de trouver les détails pour la clé étrangère " . $la_cle_etrangere;
-                }
+                $une_colonne["explications"] = "clé étrangère liée à la colonne "
+                    . $une_colonne["REFERENCED_COLUMN_NAME"]
+                    . " de la table "
+                    . $une_colonne["REFERENCED_TABLE_NAME"];
             }
 
             $resultat["les_colonnes"][$key] = $une_colonne;
         }
-
-        $resultat["les_based_table_name"] = $les_based_table_name;
-
         return $resultat;
     }
 
