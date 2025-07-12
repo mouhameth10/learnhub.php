@@ -12,11 +12,11 @@ class TafConfig
     public $tables = [];
     public static $user_disconnected = false;
     /* Information de connexion à la base de données */
-    public $database_type = "pgsql"; // "mysql" | "pgsql" | "sqlsrv"
+    public $database_type = "mysql"; // "mysql" | "pgsql" | "sqlsrv"
     public $host = "localhost"; // adresse ou ip du serveur
-    public $port = "5432"; // 3306 pour mysql | 5432 pour pgsql | 1433 pour sqlsrv
-    public $database_name = "nom_de_la_base_de_données"; // nom de la base de données
-    public $user = "postgres"; // nom de l'utilisateur de la base de données
+    public $port = "3306"; // 3306 pour mysql | 5432 pour pgsql | 1433 pour sqlsrv
+    public $database_name = "catalogue"; // nom de la base de données
+    public $user = "root"; // nom de l'utilisateur de la base de données
     public $password = ""; // mot de passe de l'utilisateur de la base de données
 
     /* informations de connexion à la documentation */
