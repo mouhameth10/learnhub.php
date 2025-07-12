@@ -19,6 +19,7 @@ try {
         $params
         contient tous les parametres envoyés par la methode POST
      */
+
     
     if(count($params)==0){
         $reponse["status"] = false;
@@ -26,27 +27,9 @@ try {
         echo json_encode($reponse);
         exit;
     }
-    if(empty($params["condition"])){
-        $reponse["status"] = false;
-        $reponse["erreur"] = "Vous devez spécifier une condition pour la modification";
-        echo json_encode($reponse);
-        exit;
-    }
     // recupération de a clé primaire de la table pour la condition de modification
     $query_primary_key="SHOW KEYS FROM $table_name WHERE Key_name = 'PRIMARY'";
     $primary_key= $taf_config->get_db()->query($query_primary_key)->fetch()["Column_name"];
-    if (empty($primary_key)) {
-        $reponse["status"] = false;
-        $reponse["erreur"] = "La table $table_name n'a pas de clé primaire";
-        echo json_encode($reponse);
-        exit;
-    }
-    if (empty($params[$primary_key])) {
-        $reponse["status"] = false;
-        $reponse["erreur"] = "Vous devez spécifier la valeur de la clé primaire pour la suppression";
-        echo json_encode($reponse);
-        exit;
-    }
     $condition="where $primary_key=".$params[$primary_key];
     // execution de la requete de modification
     $query="delete from $table_name ".$condition;
